@@ -1,0 +1,15 @@
+python==3.11.4
+numpy
+scikit-learn
+scipy
+pandas
+matplotlib
+seaborn
+black
+openai
+python-dotenv
+streamlit
+transformers
+torch
+torchvision
+torchaudio
