@@ -18,3 +18,5 @@ import torch
 
 print(dir(torch))
 help(torch)
+import torch
+print(torch.__file__)
