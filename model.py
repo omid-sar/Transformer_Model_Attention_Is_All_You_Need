@@ -1,9 +1,11 @@
-import torch
+import torch 
 import torch.nn as nn
 
 
-embedding_layer = nn.Embedding(num_embeddings =100, embedding_dim=512)
-sd = torch.tensor(1) 
-torch.tensor(15)
-torch.tensor([13], dtype=torch.long)
-embedding_layer
+class InputEmbeddings(nn.Module):
+
+    def __init__(self, d_model: int, vocab_size: int):
+        super().__init__()
+        self.d_model = d_model
+        self.vocab_size = vocab_size
+        self.embedding = nn.Embedding(vocab_size, d_model)

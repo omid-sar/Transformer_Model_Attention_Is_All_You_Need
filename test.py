@@ -1,22 +1,7 @@
-def f1(func):
-    def wrapper():
-        print('started')
-        func()
-        print('ended')
-    return wrapper    
+import pandas as pd
+import numpy as np
+import torch 
+import torch.nn as nn
 
-def f():
-    print("Hello")
-
-x=3
-
-f1()
-f1(f)()
-
-
-import torch
-
-print(dir(torch))
-help(torch)
-import torch
-print(torch.__file__)
+nn.Linear
+nn.Module
