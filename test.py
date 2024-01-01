@@ -1,7 +1,7 @@
-import pandas as pd
-import numpy as np
-import torch 
-import torch.nn as nn
+def f1():
+    print('Called f1')
 
-nn.Linear
-nn.Module
+def f2(f):
+    f()
+x=2
+f2(x)
