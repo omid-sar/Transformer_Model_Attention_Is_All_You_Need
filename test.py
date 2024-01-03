@@ -1,7 +1,12 @@
-def f1():
-    print('Called f1')
+import torch 
+import torch.nn as nn    
+from torch.autograd import grad
+import  torch.nn.functional as F
 
-def f2(f):
-    f()
-x=2
-f2(x)
+
+x = torch.tensor([3.])
+w = torch.tensor([2.], requires_grad=True)
+b = torch.tensor([2.], requires_grad=True)
+a = F.relu( w*x + b)
+a
+
