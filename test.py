@@ -22,7 +22,7 @@ df = pd.read_csv('data/test_iris/iris.data', index_col=None, header=None)
 df.columns = ['x1', 'x2', 'x3', 'x4', 'y']
 df = df.iloc[50:150]
 df['y'] = df['y'].apply(lambda x: 0 if x == 'Iris-versicolor' else 1)
-
+df
 
 # Assign features and target
 
