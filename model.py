@@ -74,3 +74,11 @@ class PositionalEncodding(nn.Module):
 
 
 
+# -------------------------------------------------------------------------------------
+    
+
+class LayerNormalization(nn.Module):
+
+    def __init__(self, ) -> None:
+        super().__init__()
+        self.x = x
