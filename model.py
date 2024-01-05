@@ -75,13 +75,25 @@ class PositionalEncodding(nn.Module):
 
 
 # -------------------------------------------------------------------------------------
-
-
+    
+x1 = np.random.randn(64, 100, 512)
+x2 = torch.tensor(x1, dtype=torch.float32)
+x2.mean( dim=-1, keepdim=True).shape
+x2.mean( dim=-1).shape
 
 
 
 class LayerNormalization(nn.Module):
 
-    def __init__(self, ) -> None:
+    def __init__(self, eps: float = 10**-6 ) -> None:
         super().__init__()
-        self.x = x
+        self.eps = eps
+        self.alpha = nn.Parameter(torch.ones(1)) # Multiplicative
+        self.bias = nn.Parameter(torch.zeros(1)) # Additive 
+
+
+    def forward(self, x):
+        mean = x.mean( dim=-1,keepdim=True)
+        std = x.std( dim=-1, keepdim=True)
+        return self.alpha * (x - mean) / (std + self.eps) + self.bias
+
