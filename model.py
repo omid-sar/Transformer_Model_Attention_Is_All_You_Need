@@ -6,16 +6,12 @@ import math
 
 # -------------------------------------------------------------------------------------
 
-d_model = 512
-vocab_size = 10000
-embedding = nn.Embedding(vocab_size, d_model)
 
 class InputEmbeddings(nn.Module):
 
     def __init__(self, d_model: int, vocab_size: int):
         super().__init__()
         self.d_model = d_model
-        self.vocab_size = vocab_size
         self.embedding = nn.Embedding(vocab_size, d_model)
 
     def forward(self,x):
@@ -23,24 +19,7 @@ class InputEmbeddings(nn.Module):
     
 
 
-
-input_emb = InputEmbeddings(512, 3)
-input_emb.forward(torch.tensor(2)).shape
 # -------------------------------------------------------------------------------------
-seq_len = 6
-dropout = 0.1
-
-test = torch.arange(seq_len * d_model).reshape(seq_len, d_model)
-test[:, 0::2]
-test[:, 1::2]
-test.shape 
-test[:, 1::2].shape
-pe = torch.zeros(seq_len, d_model)
-
-position = torch.arange(0, seq_len, dtype=torch.float).unsqueeze(1)
-torch.arange(0, d_model, 2).float()* (- math.log(10000.0)/ d_model)
-torch.exp(torch.arange(0, d_model, 2) * (- math.log(10000.0)/ d_model)).shape
-
 
 
 class PositionalEncodding(nn.Module):
@@ -76,12 +55,6 @@ class PositionalEncodding(nn.Module):
 
 # -------------------------------------------------------------------------------------
     
-x1 = np.random.randn(64, 100, 512)
-x2 = torch.tensor(x1, dtype=torch.float32)
-x2.mean( dim=-1, keepdim=True).shape
-x2.mean( dim=-1).shape
-
-
 
 class LayerNormalization(nn.Module):
 
@@ -96,4 +69,26 @@ class LayerNormalization(nn.Module):
         mean = x.mean( dim=-1,keepdim=True)
         std = x.std( dim=-1, keepdim=True)
         return self.alpha * (x - mean) / (std + self.eps) + self.bias
+    
+
+# -----------------------------------------------------------------------------------
+
+
+
+class FeedForwardBlock(nn.Module):
+
+    def __init__(self, d_model:int, d_ff: int, dropout: float) -> None:
+        super().__init__()
+        self.linear_1 = nn.Linear(d_model, d_ff, bias= True) # Define W1,B1 
+        self.dropout = nn.Dropout(dropout)
+        self.linear_2 = nn.Linear(d_ff, d_model, bias=True) # Define W2, B2
+
+    def forward(self, x):
+        out = self.linear_1(x)
+        out = torch.nn.functional.relu(out)
+        out = self.dropout(out)
+        out = self.linear_2(out)
+        return out
+
+
 
