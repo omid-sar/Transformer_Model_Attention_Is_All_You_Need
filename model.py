@@ -18,7 +18,18 @@ class InputEmbeddings(nn.Module):
         return self.embedding(x) * math.sqrt(self.d_model)
     
 
-
+# -------------------------------------------------------------------------------------
+d_model = 512
+vocab_size = 10000
+batch_size = 64
+seq_len = 100 
+embeddings = InputEmbeddings(d_model, vocab_size)
+# Create a tensor of random integers representing word indices
+# The integers should be in the range [0, vocab_size - 1]
+word_list = torch.randint(0, 10000, (batch_size, seq_len))
+print('word_list',word_list.shape)
+word_embeddings = embeddings.forward(word_list)
+print('word_embeddings',word_embeddings.shape)
 # -------------------------------------------------------------------------------------
 
 
@@ -48,72 +59,17 @@ class PositionalEncodding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        x = x + pe[:,x.shap[1],:].requires_grad(False)
-        return self.dropout(x)
+        x = x + self.pe[:, :x.shape[1], :]
 
+        return self.dropout(x)
+# -------------------------------------------------------------------------------------
+dropout = 0.0
+positional_encodding = PositionalEncodding(d_model, seq_len, dropout)
+word_emb_pos = positional_encodding.forward(word_embeddings)
+print('word_emb_pos',word_emb_pos.shape)
 
 
 # -------------------------------------------------------------------------------------
-    
-
-class LayerNormalization(nn.Module):
-
-    def __init__(self, eps: float = 10**-6 ) -> None:
-        super().__init__()
-        self.eps = eps
-        self.alpha = nn.Parameter(torch.ones(1)) # Multiplicative
-        self.bias = nn.Parameter(torch.zeros(1)) # Additive 
-
-
-    def forward(self, x):
-        mean = x.mean( dim=-1,keepdim=True)
-        std = x.std( dim=-1, keepdim=True)
-        return self.alpha * (x - mean) / (std + self.eps) + self.bias
-    
-
-# -----------------------------------------------------------------------------------
-
-
-
-class FeedForwardBlock(nn.Module):
-
-    def __init__(self, d_model:int, d_ff: int, dropout: float) -> None:
-        super().__init__()
-        self.linear_1 = nn.Linear(d_model, d_ff, bias= True) # Define W1,B1 
-        self.dropout = nn.Dropout(dropout)
-        self.linear_2 = nn.Linear(d_ff, d_model, bias=True) # Define W2, B2
-
-    def forward(self, x):
-        out = self.linear_1(x)
-        out = nn.functional.relu(out)
-        out = self.dropout(out)
-        out = self.linear_2(out)
-        return out
-
-# --------------------------------------------------------------------------------
-d_model = torch.tensor([512])
-h = torch.tensor([4])
-d_k = d_model // h
-
-query = torch.randn(64,100, 512)
-key = torch.randn(64,100, 512)
-value = torch.randn(64,100, 512)
-
-query = query.view(query.shape[0], query.shape[1], h, d_k).transpose(1, 2)
-key = key.view(key.shape[0], key.shape[1], h, d_k).transpose(1, 2)
-value = value.view(value.shape[0], value.shape[1], h, d_k).transpose(1, 2)
-
-value.view(value.shape[0], value.shape[1], h, d_k).transpose(1, 2).shape
-value.transpose(1,2).contiguous().view(value.shape[0], -1, h*d_k).shape
-value.transpose(1,2).contiguous().view(value.shape[0], value.shape[1], h*d_k).shape
-
-print("query:" , query.shape, '\n' , 
-      "key:" , key.shape, '\n',
-      "value:" , value.shape)
-
-
-key.transpose(-2,-1).shape
-
 
 
 class MultiHeadAttentionBlock(nn.Module):
@@ -161,7 +117,93 @@ class MultiHeadAttentionBlock(nn.Module):
         # (Batch, h, seq_len, d_k) --> (Batch, seq_len, h, d_k) --> (Batch, seq_len, d_model)
         x = x.transpose(1,2).contiguous().view(x.shape[0], -1 , self.h*self.d_k)
 
+        # (Batch, seq_len, d_model) --> (Batch, seq_len, d_model)
         return self.w_o(x)
+    
+    
+# -------------------------------------------------------------------------------------
+h = 4
+multi_head_attention = MultiHeadAttentionBlock(d_model, h, dropout)
+
+
+
+
+# -------------------------------------------------------------------------------------
+
+class LayerNormalization(nn.Module):
+
+    def __init__(self, eps: float = 10**-6 ) -> None:
+        super().__init__()
+        self.eps = eps
+        self.alpha = nn.Parameter(torch.ones(1)) # Multiplicative
+        self.bias = nn.Parameter(torch.zeros(1)) # Additive 
+
+
+    def forward(self, x):
+        mean = x.mean( dim=-1,keepdim=True)
+        std = x.std( dim=-1, keepdim=True)
+        return self.alpha * (x - mean) / (std + self.eps) + self.bias
+    
+
+# -------------------------------------------------------------------------------------
+layer_normalization = LayerNormalization()
+
+
+# -----------------------------------------------------------------------------------
+
+
+
+class FeedForwardBlock(nn.Module):
+
+    def __init__(self, d_model:int, d_ff: int, dropout: float) -> None:
+        super().__init__()
+        self.linear_1 = nn.Linear(d_model, d_ff, bias= True) # Define W1,B1 
+        self.dropout = nn.Dropout(dropout)
+        self.linear_2 = nn.Linear(d_ff, d_model, bias=True) # Define W2, B2
+
+    def forward(self, x):
+        out = self.linear_1(x)
+        out = nn.functional.relu(out)
+        out = self.dropout(out)
+        out = self.linear_2(out)
+        return out
+# -------------------------------------------------------------------------------------
+    
+# --------------------------------------------------------------------------------
+d_model = torch.tensor([512])
+h = torch.tensor([4])
+d_k = d_model // h
+
+query = torch.randn(64,100, 512)
+key = torch.randn(64,100, 512)
+value = torch.randn(64,100, 512)
+
+query = query.view(query.shape[0], query.shape[1], h, d_k).transpose(1, 2)
+key = key.view(key.shape[0], key.shape[1], h, d_k).transpose(1, 2)
+value = value.view(value.shape[0], value.shape[1], h, d_k).transpose(1, 2)
+
+value.view(value.shape[0], value.shape[1], h, d_k).transpose(1, 2).shape
+value.transpose(1,2).contiguous().view(value.shape[0], -1, h*d_k).shape
+value.transpose(1,2).contiguous().view(value.shape[0], value.shape[1], h*d_k).shape
+
+print("query:" , query.shape, '\n' , 
+      "key:" , key.shape, '\n',
+      "value:" , value.shape)
+
+
+key.transpose(-2,-1).shape
+
+
+    
+# ------------------------------------------------------------------------------------
+
+class ResidualConnection(nn.Module):
+
+    def __init__(self,dropout: float) -> None:
+        super().__init__()
+
+        self.dropout = nn.Dropout(dropout)
+
 
 
 
