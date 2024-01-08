@@ -123,12 +123,15 @@ class MultiHeadAttentionBlock(nn.Module):
 
 # -------------------------------------------------------------------------------------
 h = 4
+q = word_emb_pos
+k = word_emb_pos
+v = word_emb_pos
+mask = torch.ones(1, 1, seq_len, seq_len)
 multi_head_attention = MultiHeadAttentionBlock(d_model, h, dropout)
-
-
-
-
+multi_head = multi_head_attention.forward(q, k, v)
+print('concatinated multi_head:', multi_head.shape)
 # -------------------------------------------------------------------------------------
+
 
 class LayerNormalization(nn.Module):
 
@@ -147,10 +150,9 @@ class LayerNormalization(nn.Module):
 
 # -------------------------------------------------------------------------------------
 layer_normalization = LayerNormalization()
-
-
+normal_multi_head = layer_normalization.forward(multi_head)
+print("normalized concatinated multi_head: ", normal_multi_head.shape)
 # -----------------------------------------------------------------------------------
-
 
 
 class FeedForwardBlock(nn.Module):
@@ -167,34 +169,13 @@ class FeedForwardBlock(nn.Module):
         out = self.dropout(out)
         out = self.linear_2(out)
         return out
+    
+
 # -------------------------------------------------------------------------------------
-    
-# --------------------------------------------------------------------------------
-d_model = torch.tensor([512])
-h = torch.tensor([4])
-d_k = d_model // h
-
-query = torch.randn(64,100, 512)
-key = torch.randn(64,100, 512)
-value = torch.randn(64,100, 512)
-
-query = query.view(query.shape[0], query.shape[1], h, d_k).transpose(1, 2)
-key = key.view(key.shape[0], key.shape[1], h, d_k).transpose(1, 2)
-value = value.view(value.shape[0], value.shape[1], h, d_k).transpose(1, 2)
-
-value.view(value.shape[0], value.shape[1], h, d_k).transpose(1, 2).shape
-value.transpose(1,2).contiguous().view(value.shape[0], -1, h*d_k).shape
-value.transpose(1,2).contiguous().view(value.shape[0], value.shape[1], h*d_k).shape
-
-print("query:" , query.shape, '\n' , 
-      "key:" , key.shape, '\n',
-      "value:" , value.shape)
-
-
-key.transpose(-2,-1).shape
-
-
-    
+d_ff = 2048
+feed_forward_block = FeedForwardBlock(d_model, d_ff, dropout)
+fully_connected_layer = feed_forward_block.forward(normal_multi_head)
+print('fully connected feedforwarded normalized concatinated multi_head:', fully_connected_layer.shape)
 # ------------------------------------------------------------------------------------
 
 class ResidualConnection(nn.Module):
