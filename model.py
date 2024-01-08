@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 import math
-
-
 # -------------------------------------------------------------------------------------
 
 
@@ -184,6 +182,14 @@ class ResidualConnection(nn.Module):
         super().__init__()
 
         self.dropout = nn.Dropout(dropout)
+        self.norm = LayerNormalization()
+
+    def forward(self, x, sublayer):
+        return x + self.dropout(sublayer(self.norm(x)))
+    
+# ------------------------------------------------------------------------------------
+
+
 
 
 
