@@ -62,13 +62,13 @@ class PositionalEncodding(nn.Module):
         x = x + self.pe[:, :x.shape[1], :]
 
         return self.dropout(x)
+    
+
 # -------------------------------------------------------------------------------------
 dropout = 0.0
 positional_encodding = PositionalEncodding(d_model, seq_len, dropout)
 word_emb_pos = positional_encodding.forward(word_embeddings)
 print('word_emb_pos',word_emb_pos.shape)
-
-
 # -------------------------------------------------------------------------------------
 
 
@@ -120,7 +120,7 @@ class MultiHeadAttentionBlock(nn.Module):
         # (Batch, seq_len, d_model) --> (Batch, seq_len, d_model)
         return self.w_o(x)
     
-    
+
 # -------------------------------------------------------------------------------------
 h = 4
 multi_head_attention = MultiHeadAttentionBlock(d_model, h, dropout)
