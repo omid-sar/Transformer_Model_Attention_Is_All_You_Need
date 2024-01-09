@@ -186,9 +186,31 @@ class ResidualConnection(nn.Module):
 
     def forward(self, x, sublayer):
         return x + self.dropout(sublayer(self.norm(x)))
-    
+
+
 # ------------------------------------------------------------------------------------
 
+
+class DecoderBlock(nn.Module):
+    
+    def __init__(self, self_attention_block: MultiHeadAttentionBlock,
+                 feed_forward_block: FeedForwardBlock, dropout:float) -> None:
+        super().__init__()
+
+        self.self_attention_block = self_attention_block
+        self.feed_forward_block = feed_forward_block
+        self.norm = LayerNormalization()
+        self.residual_connection = nn.ModuleList(ResidualConnection(dropout) for _ in range(2))
+        
+    def forward(self, x, src_mask):
+        x = self.residual_connection[0](x, lambda:self.self_attention_block(x, x, x, src_mask))
+        x = self.residual_connection[1](x, lambda:self.feed_forward_block)
+        return x
+    
+                                             
+
+
+    
 
 
 
