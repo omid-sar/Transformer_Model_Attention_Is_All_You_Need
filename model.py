@@ -101,7 +101,7 @@ class MultiHeadAttentionBlock(nn.Module):
         return (attention_scores @ value) , attention_scores
 
 
-    def forward(self, q, k, v):
+    def forward(self, q, k, v, mask):
         query = self.w_q(q) # (Batch, seq_len, d_model) -> (Batch, seq_len, d_model)
         key = self.w_k(k) # (Batch, seq_len, d_model) -> (Batch, seq_len, d_model)
         value = self.w_v(v) # (Batch, seq_len, d_model) -> (Batch, seq_len, d_model)
@@ -190,8 +190,9 @@ class ResidualConnection(nn.Module):
 
 # ------------------------------------------------------------------------------------
 
-
-class DecoderBlock(nn.Module):
+# the original code has an axtra "feature" attribute 
+# self.residual_connections = nn.ModuleList([ResidualConnection(features, dropout) for _ in range(2)])
+class EncoderBlock(nn.Module):
     
     def __init__(self, self_attention_block: MultiHeadAttentionBlock,
                  feed_forward_block: FeedForwardBlock, dropout:float) -> None:
@@ -199,21 +200,27 @@ class DecoderBlock(nn.Module):
 
         self.self_attention_block = self_attention_block
         self.feed_forward_block = feed_forward_block
-        self.norm = LayerNormalization()
-        self.residual_connection = nn.ModuleList(ResidualConnection(dropout) for _ in range(2))
+        self.residual_connections = nn.ModuleList(ResidualConnection(dropout) for _ in range(2))
         
     def forward(self, x, src_mask):
-        x = self.residual_connection[0](x, lambda:self.self_attention_block(x, x, x, src_mask))
-        x = self.residual_connection[1](x, lambda:self.feed_forward_block)
+        x = self.residual_connections[0](x, lambda x: self.self_attention_block(x, x, x, src_mask))
+        x = self.residual_connections[1](x, self.feed_forward_block)
         return x
+
+# ------------------------------------------------------------------------------------
+
+class Encoder(nn.Module):
+
+    def __init__(self, layers: nn.ModuleList) -> None:
+        super().__init__()
+
+        self.layers = layers
+        self.norm = LayerNormalization()
+
+    def forward(self, x, mask):
+        for layer in self.layers:
+            x = layer(x, mask)
+        return self.norm(x)
+
+# ------------------------------------------------------------------------------------
     
-                                             
-
-
-    
-
-# block
-
-
-
-
