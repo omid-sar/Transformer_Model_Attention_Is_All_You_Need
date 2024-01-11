@@ -269,3 +269,35 @@ class ProjectionLayer(nn.Module):
         # (Batch, seq_len, d_model) --> (Batch, seq_len, vocab_size)
         return self.proj(x)
 # ------------------------------------------------------------------------------------
+    
+class Transformer(nn.Module):
+
+    def __init__(self, encoder: Encoder, decoder: Decoder, projection_layer: ProjectionLayer,
+                 src_embed: InputEmbeddings, tgt_embed: InputEmbeddings, 
+                 src_pos: PositionalEncodding, tgt_pos: PositionalEncodding) -> None:
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.projection_layer = projection_layer
+        self.src_embed = src_embed
+        self.tgt_embed = tgt_embed
+        self.src_pos = src_pos
+        self.tgt_pos = tgt_pos
+    
+
+    def encode(self, src, src_mask):
+        # (Batch, seq_len, d_model)
+        src = self.src_embed(src)
+        src = self.src_pos(src)
+        return self.encoder(src, src_mask)
+    
+    def decode(self, encoder_output: torch.Tensor, tgt: torch.Tensor, tgt_mask: torch.Tensor, src_mask: torch.Tensor):
+         # (Batch, seq_len, d_model)
+        tgt = self.tgt_embed(tgt)
+        tgt = self.tgt_pos(tgt)
+        return self.decoder(tgt, encoder_output, src_mask, tgt_mask)
+    
+    def project(self, x):
+         # (Batch, seq_len, vocab_size)
+        return self.projection_layer(x)
+    
