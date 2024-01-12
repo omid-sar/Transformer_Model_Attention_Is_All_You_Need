@@ -27,6 +27,7 @@ dependencies:
       - tiktoken
       - chromadb
       - transformers
+      - datasets
 
 # For M1 Macs, use PyTorch's special build
 platforms:
