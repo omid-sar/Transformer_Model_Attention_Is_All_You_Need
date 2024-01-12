@@ -6,3 +6,21 @@ from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
+
+from pathlib import Path
+config = {'tokenizer_file': '../data/raw/tokenizer_file_{}.json'}
+lang = 'en'
+tokenizer_path = Path(config['tokenizer_file'].format(lang))
+
+print(x.absolute())
+def get_or_build_tokenizer(config, ds, lang):
+    tokenizer_path = Path(config['tokenizer_file'].format(lang))
+
+
+Path.exists(tokenizer_path)
+tokenizer_path.exists()
+Tokenizer()
+WordLevel()
+
+tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
+tokenizer.pre_tokenizer()
