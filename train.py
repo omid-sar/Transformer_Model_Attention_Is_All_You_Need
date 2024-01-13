@@ -20,7 +20,7 @@ from pathlib import Path
 # ----------------------------------------------------------------------------------------------------
 # my cheat sheets 
 config = {'tokenizer_file': '../data/raw/tokenizer_file_{}.json', 'datasource': 'tep_en_fa_para',
-          'lang_src': 'en', 'lang_tgt': 'fa', 'seq_len': 350, 'batch_size':8
+          'lang_src': 'en', 'lang_tgt': 'fa', 'seq_len': 50, 'batch_size':8
            }
 # ----------------------------------------------------------------------------------------------------
 
