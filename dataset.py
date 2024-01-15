@@ -4,11 +4,9 @@ import torch.nn
 from torch.utils.data import Dataset
 
 
-torch.Tensor(tokenizer_src.token_)
-
 class BilingualDataset(Dataset):
 
-    def __init__(self, self, ds, tokenizer_src, tokenizer_tgt, src_lang, tgt_lang, seq_len) -> None:
+    def __init__(self, ds, tokenizer_src, tokenizer_tgt, src_lang, tgt_lang, seq_len) -> None:
         super().__init__()
 
         self.ds = ds
@@ -88,3 +86,9 @@ class BilingualDataset(Dataset):
             "src_text": src_text,
             "tgt_text": tgt_text,
         }
+
+     
+    def causal_mask(size):
+        mask = torch.triu(torch.ones(1, size, size), diagonal=1).type(torch.int)
+        return mask == 0
+
