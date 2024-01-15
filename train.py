@@ -135,7 +135,18 @@ val_dataloader = DataLoader(val_ds, batch_size=1, shuffle=True)
 
 
 
-tep_dataset_sample = train_ds_raw[1]
+tep_dataset_sample = train_ds_raw[9]
+src_sample = tep_dataset_sample['translation']['en']
+tgt_sample = tep_dataset_sample['translation']['fa']
+
+src_token_id = tokenizer_src.encode(src_sample).ids
+tgt_token_id = tokenizer_tgt.encode(tgt_sample).ids
+
+tokenizer_src.encode(src_sample).ids
+print(f"src_sample:  {src_sample} \n src_token_id: {src_token_id}")
+print(f"tgt_sample:  {tgt_sample} \n tgt_token_id: {tgt_token_id}")
+
+
 
 
 
