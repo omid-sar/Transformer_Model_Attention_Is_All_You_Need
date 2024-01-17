@@ -171,7 +171,7 @@ def causal_mask(size):
 decoder_mask = causal_mask(seq_len)
 
 print(f" encoder_input: {encoder_input} \n encoder_mask: {encoder_mask} \n encoder_mask.shape: {encoder_mask.shape} \n decoder_mask: {decoder_mask}")
-""""
+"""
 # ----------------------------------------------------------------------------------------------------   
 config = get_config()
 def get_model(config, src_vocab_size, tgt_vocab_size):
