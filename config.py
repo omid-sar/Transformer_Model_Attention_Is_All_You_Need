@@ -24,5 +24,3 @@ def get_weights_file_path(config, epoch):
     return str(Path('.')/model_folder/model_filename)
 
 
-config = get_config()
-get_weights_file_path(config, 1)

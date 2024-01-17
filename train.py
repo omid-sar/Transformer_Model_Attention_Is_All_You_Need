@@ -1,6 +1,8 @@
 # Local Modules
 from dataset import BilingualDataset, causal_mask
 from model import built_transformer
+from config import get_config, get_weights_file_path
+
 
 
 import torch
@@ -16,14 +18,6 @@ from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
 from pathlib import Path
-
-
-# ----------------------------------------------------------------------------------------------------
-# my cheat sheets 
-config = {'tokenizer_file': '../data/raw/tokenizer_file_{}.json', 'datasource': 'tep_en_fa_para',
-          'lang_src': 'en', 'lang_tgt': 'fa', 'seq_len': 50, 'batch_size': 8, 'd_model': 512
-           }
-# ----------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------
 # help me to realize the Path Module
@@ -53,14 +47,9 @@ def get_or_build_tokenizer(config, ds, lang):
     return tokenizer
 
 # ----------------------------------------------------------------------------------------------------
-# the differnce between "opus_books" dataset and "tep_en_fa_para"
+# The differnce between "opus_books" dataset and "tep_en_fa_para"
 """
-load_dataset('tep_en_fa_para')
-
-Max length of source sentence: 37
-Max length of target sentence: 37
-
-
+#SAMPLE FROM TEP DATASET
 DatasetDict({
     train: Dataset({
         features: ['translation'],
@@ -68,16 +57,14 @@ DatasetDict({
     })
 })
 
-#SAMPLE FROM TEP DATASET
+
 {
     'translation':
                     {'en': 'i mean , the tartans for shit .',
                     'fa': 'منظورم اينه که تارتان بدرد نميخوره .'}
     }
 
-
-load_dataset('opus_books', 'en-it')
-
+#SAMPLE FROM OPUS DATASET
 DatasetDict({
     train: Dataset({
         features: ['id', 'translation'],
@@ -86,7 +73,7 @@ DatasetDict({
 })
 
 
-#SAMPLE FROM OPUS DATASET
+
 {
     'id': '4',
  'translation':
@@ -96,9 +83,6 @@ DatasetDict({
 
 
 """
-
-
-
 # ----------------------------------------------------------------------------------------------------
 
 
@@ -139,7 +123,6 @@ def get_ds(config):
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
 # ----------------------------------------------------------------------------------------------------   
-
 """"
 ds_raw = load_dataset(f"{config['datasource']}", split='train', )
 # Build Tokenoizers
@@ -189,4 +172,6 @@ print(f" encoder_input: {encoder_input} \n encoder_mask: {encoder_mask} \n encod
 def get_model(config, src_vocab_size, tgt_vocab_size):
     model = built_transformer(src_vocab_size, tgt_vocab_size, src_seq_len=config['seq_len'], tgt_seq_len=config['seq_len'], d_model=config['d_model'])
     return model
+
+
 
