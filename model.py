@@ -17,6 +17,7 @@ class InputEmbeddings(nn.Module):
     
 
 # -------------------------------------------------------------------------------------
+"""
 d_model = 512
 vocab_size = 10000
 batch_size = 64
@@ -28,6 +29,7 @@ word_list = torch.randint(0, 10000, (batch_size, seq_len))
 print('word_list',word_list.shape)
 word_embeddings = embeddings.forward(word_list)
 print('word_embeddings',word_embeddings.shape)
+"""
 # -------------------------------------------------------------------------------------
 
 
@@ -63,10 +65,12 @@ class PositionalEncodding(nn.Module):
     
 
 # -------------------------------------------------------------------------------------
+"""
 dropout = 0.0
 positional_encodding = PositionalEncodding(d_model, seq_len, dropout)
 word_emb_pos = positional_encodding.forward(word_embeddings)
 print('word_emb_pos',word_emb_pos.shape)
+"""
 # -------------------------------------------------------------------------------------
 
 
@@ -120,6 +124,7 @@ class MultiHeadAttentionBlock(nn.Module):
     
 
 # -------------------------------------------------------------------------------------
+"""
 h = 4
 q = word_emb_pos
 k = word_emb_pos
@@ -128,6 +133,7 @@ mask = torch.ones(1, 1, seq_len, seq_len)
 multi_head_attention = MultiHeadAttentionBlock(d_model, h, dropout)
 multi_head = multi_head_attention.forward(q, k, v, mask)
 print('concatinated multi_head:', multi_head.shape)
+"""
 # -------------------------------------------------------------------------------------
 
 
@@ -147,9 +153,11 @@ class LayerNormalization(nn.Module):
     
 
 # -------------------------------------------------------------------------------------
+"""
 layer_normalization = LayerNormalization()
 normal_multi_head = layer_normalization.forward(multi_head)
 print("normalized concatinated multi_head: ", normal_multi_head.shape)
+"""
 # -----------------------------------------------------------------------------------
 
 
@@ -170,10 +178,12 @@ class FeedForwardBlock(nn.Module):
     
 
 # -------------------------------------------------------------------------------------
+"""
 d_ff = 2048
 feed_forward_block = FeedForwardBlock(d_model, d_ff, dropout)
 fully_connected_layer = feed_forward_block.forward(normal_multi_head)
 print('fully connected feedforwarded normalized concatinated multi_head:', fully_connected_layer.shape)
+"""
 # ------------------------------------------------------------------------------------
 
 class ResidualConnection(nn.Module):

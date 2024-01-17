@@ -1,5 +1,6 @@
 # Local Modules
 from dataset import BilingualDataset, causal_mask
+from model import built_transformer
 
 
 import torch
@@ -20,7 +21,7 @@ from pathlib import Path
 # ----------------------------------------------------------------------------------------------------
 # my cheat sheets 
 config = {'tokenizer_file': '../data/raw/tokenizer_file_{}.json', 'datasource': 'tep_en_fa_para',
-          'lang_src': 'en', 'lang_tgt': 'fa', 'seq_len': 50, 'batch_size':8
+          'lang_src': 'en', 'lang_tgt': 'fa', 'seq_len': 50, 'batch_size': 8, 'd_model': 512
            }
 # ----------------------------------------------------------------------------------------------------
 
@@ -137,7 +138,7 @@ def get_ds(config):
 
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
-----------------------------------------------------------------------------------------------------   
+# ----------------------------------------------------------------------------------------------------   
 
 """"
 ds_raw = load_dataset(f"{config['datasource']}", split='train', )
@@ -183,3 +184,9 @@ decoder_mask = causal_mask(seq_len)
 
 print(f" encoder_input: {encoder_input} \n encoder_mask: {encoder_mask} \n encoder_mask.shape: {encoder_mask.shape} \n decoder_mask: {decoder_mask}")
 """"
+# ----------------------------------------------------------------------------------------------------   
+
+def get_model(config, src_vocab_size, tgt_vocab_size):
+    model = built_transformer(src_vocab_size, tgt_vocab_size, src_seq_len=config['seq_len'], tgt_seq_len=config['seq_len'], d_model=config['d_model'])
+    return model
+
