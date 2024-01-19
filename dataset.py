@@ -87,7 +87,6 @@ class BilingualDataset(Dataset):
             "tgt_text": tgt_text,
         }
 
-    
 
 
 def causal_mask(size):
