@@ -10,6 +10,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 
 # Huggingface Tokenizers
@@ -195,7 +196,7 @@ global_step = 0
 preload = config['preload']
 
 model_filename = latest_weights_file_path(config) if preload == 'latest' else get_weights_file_path(config, preload) if preload else None
-
+loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id('[PAD]'), label_smoothing=0.1).to(device)
 model_filename
 def train_model(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -221,7 +222,19 @@ def train_model(config):
         global_step = state['global_step']
     else:
         print('No model to preload, starting from scratch')
+        
+    loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id('[PAD]'), label_smoothing=0.1).to(device)
 
+    for epoch in range(initial_epoch, config['num_epochs']):
+        torch.cuda.empty_cache()
+        model.train()
+        batch_iterator = tqdm(train_dataloader, desc=f"Processing Epoch{epoch:02d}")
+        for batch in batch_iterator:
+            
+            encoder_input = batch['encoder_input'].to(device) # (b, seq_len)
+            decoder_input = batch['decoder_input'].to(device) # (B, seq_len)
+            encoder_mask = batch['encoder_mask'].to(device) # (B, 1, 1, seq_len)
+            decoder_mask = batch['decoder_mask'].to(device) # (B, 1, seq_len, seq_len)
 
 
 
