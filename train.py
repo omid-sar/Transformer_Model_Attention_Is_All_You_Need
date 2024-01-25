@@ -7,7 +7,7 @@ from config import get_config, get_weights_file_path, latest_weights_file_path
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader,  random_split
 
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -178,26 +178,8 @@ def get_model(config, src_vocab_size, tgt_vocab_size):
     model = built_transformer(src_vocab_size, tgt_vocab_size, src_seq_len=config['seq_len'], tgt_seq_len=config['seq_len'], d_model=config['d_model'])
     return model
 # ----------------------------------------------------------------------------------------------------   
-config = get_config()
-src_vocab_size = 30000
-tgt_vocab_size = 30000
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f" Using {device} device ")
 
-(Path(f"{config['datasource']}_{config['model_folder']}")).mkdir(parents=True, exist_ok=True)
-train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt = get_ds(config)
-model = get_model(config,src_vocab_size, tgt_vocab_size)
-# Tensorboard
-writer = SummaryWriter(config['experiment_name'])
-optimizer = torch.optim.Adam(model.parameters(), lr = config['lr'])
 
-initial_epoch = 0
-global_step = 0
-preload = config['preload']
-
-model_filename = latest_weights_file_path(config) if preload == 'latest' else get_weights_file_path(config, preload) if preload else None
-loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id('[PAD]'), label_smoothing=0.1).to(device)
-model_filename
 def train_model(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f" Using {device} device ")
@@ -230,8 +212,8 @@ def train_model(config):
         model.train()
         batch_iterator = tqdm(train_dataloader, desc=f"Processing Epoch{epoch:02d}")
         for batch in batch_iterator:
-            
-            encoder_input = batch['encoder_input'].to(device) # (b, seq_len)
+
+            encoder_input = batch['encoder_input'].to(device) # (B, seq_len)
             decoder_input = batch['decoder_input'].to(device) # (B, seq_len)
             encoder_mask = batch['encoder_mask'].to(device) # (B, 1, 1, seq_len)
             decoder_mask = batch['decoder_mask'].to(device) # (B, 1, seq_len, seq_len)
