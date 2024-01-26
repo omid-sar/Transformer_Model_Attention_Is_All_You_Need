@@ -4,7 +4,6 @@ import numpy as np
 import math
 # -------------------------------------------------------------------------------------
 
-
 class InputEmbeddings(nn.Module):
 
     def __init__(self, d_model: int, vocab_size: int):
@@ -15,23 +14,7 @@ class InputEmbeddings(nn.Module):
     def forward(self,x):
         return self.embedding(x) * math.sqrt(self.d_model)
     
-
 # -------------------------------------------------------------------------------------
-"""
-d_model = 512
-vocab_size = 10000
-batch_size = 64
-seq_len = 100 
-embeddings = InputEmbeddings(d_model, vocab_size)
-# Create a tensor of random integers representing word indices
-# The integers should be in the range [0, vocab_size - 1]
-word_list = torch.randint(0, 10000, (batch_size, seq_len))
-print('word_list',word_list.shape)
-word_embeddings = embeddings.forward(word_list)
-print('word_embeddings',word_embeddings.shape)
-"""
-# -------------------------------------------------------------------------------------
-
 
 class PositionalEncodding(nn.Module):
 
@@ -63,16 +46,7 @@ class PositionalEncodding(nn.Module):
 
         return self.dropout(x)
     
-
 # -------------------------------------------------------------------------------------
-"""
-dropout = 0.0
-positional_encodding = PositionalEncodding(d_model, seq_len, dropout)
-word_emb_pos = positional_encodding.forward(word_embeddings)
-print('word_emb_pos',word_emb_pos.shape)
-"""
-# -------------------------------------------------------------------------------------
-
 
 class MultiHeadAttentionBlock(nn.Module):
 
@@ -122,20 +96,7 @@ class MultiHeadAttentionBlock(nn.Module):
         # (Batch, seq_len, d_model) --> (Batch, seq_len, d_model)
         return self.w_o(x)
     
-
 # -------------------------------------------------------------------------------------
-"""
-h = 4
-q = word_emb_pos
-k = word_emb_pos
-v = word_emb_pos
-mask = torch.ones(1, 1, seq_len, seq_len)
-multi_head_attention = MultiHeadAttentionBlock(d_model, h, dropout)
-multi_head = multi_head_attention.forward(q, k, v, mask)
-print('concatinated multi_head:', multi_head.shape)
-"""
-# -------------------------------------------------------------------------------------
-
 
 class LayerNormalization(nn.Module):
 
@@ -153,13 +114,6 @@ class LayerNormalization(nn.Module):
     
 
 # -------------------------------------------------------------------------------------
-"""
-layer_normalization = LayerNormalization()
-normal_multi_head = layer_normalization.forward(multi_head)
-print("normalized concatinated multi_head: ", normal_multi_head.shape)
-"""
-# -----------------------------------------------------------------------------------
-
 
 class FeedForwardBlock(nn.Module):
 
@@ -176,15 +130,7 @@ class FeedForwardBlock(nn.Module):
         out = self.linear_2(out)
         return out
     
-
 # -------------------------------------------------------------------------------------
-"""
-d_ff = 2048
-feed_forward_block = FeedForwardBlock(d_model, d_ff, dropout)
-fully_connected_layer = feed_forward_block.forward(normal_multi_head)
-print('fully connected feedforwarded normalized concatinated multi_head:', fully_connected_layer.shape)
-"""
-# ------------------------------------------------------------------------------------
 
 class ResidualConnection(nn.Module):
 
@@ -196,7 +142,6 @@ class ResidualConnection(nn.Module):
 
     def forward(self, x, sublayer):
         return x + self.dropout(sublayer(self.norm(x)))
-
 
 # ------------------------------------------------------------------------------------
 
@@ -312,7 +257,6 @@ class Transformer(nn.Module):
         return self.projection_layer(x)
     
 # ------------------------------------------------------------------------------------
-
 
 def built_transformer(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int, tgt_seq_len: int, d_model: int=512,
                       N: int=6, h: int=8, dropout: float=0.1, d_ff: int=2048) -> Transformer:
