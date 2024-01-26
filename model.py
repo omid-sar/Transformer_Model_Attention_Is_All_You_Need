@@ -59,7 +59,7 @@ class PositionalEncodding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        x = x + self.pe[:, :x.shape[1], :]
+        x = x + (self.pe[:, :x.shape[1], :]).required_grad_(False)
 
         return self.dropout(x)
     
@@ -210,7 +210,7 @@ class EncoderBlock(nn.Module):
 
         self.self_attention_block = self_attention_block
         self.feed_forward_block = feed_forward_block
-        self.residual_connections = nn.ModuleList(ResidualConnection(dropout) for _ in range(2))
+        self.residual_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(2)])
         
     def forward(self, x, src_mask):
         x = self.residual_connections[0](x, lambda x: self.self_attention_block(x, x, x, src_mask))
@@ -243,7 +243,7 @@ class DecoderBlock(nn.Module):
         self.self_attention_block = self_attention_block
         self.cross_attention_block = cross_attention_block
         self.feed_forward_block = feed_forward_block
-        self.residual_connections = nn.ModuleList(ResidualConnection(dropout) for _ in range(3))
+        self.residual_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
 
     def forward(self, x, encoder_output, src_msk, tgt_mask):
         x = self.residual_connections[0](x, lambda x: self.self_attention_block(x, x, x, tgt_mask))
@@ -359,3 +359,87 @@ def built_transformer(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int
             nn.init.xavier_uniform_(p)
     
     return transformer
+
+
+ResidualConnection(dropout)
+LayerNormalization()
+
+class DecoderBlock(nn.Module):
+    def __init__(self, 
+                 self_attention_block: MultiHeadAttentionBlock,
+                 cross_attention_block: MultiHeadAttentionBlock,
+                 feed_forward_block: FeedForwardBlock,
+                 dropout: float
+                 ) -> None:
+        super().__init__()
+        self.self_attention_block = self_attention_block
+        self.cross_attention_block = cross_attention_block
+        self.feed_forward_block = feed_forward_block
+        self.residual_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
+
+
+
+    def forward(self, x, encoder_output, src_mask, tgt_mask):
+
+        x = self.residual_connections[0](x, lambda x: self.self_attention_block(x, x, x, src_mask))
+        x = self.residual_connections[1](x, lambda x: self.cross_attention_block(encoder_output, encoder_output, x, tgt_mask))
+        x = self.residual_connections[2](x, lambda x: self.feed_forward_block(x))
+        return x
+
+class Decoder(nn.Module):
+    def __init__(self, layers: nn.ModuleList) -> None:
+        super().__init__()
+
+        self.layers = layers
+        self.norm = LayerNormalization()
+
+    def forward(self,x, encoder_output, src_mask, tgt_mask):
+        for layer in self.layers:
+            x = layer(x, encoder_output, src_mask, tgt_mask)
+            return self.norm(x)
+        
+class ProjectionLayer(nn.Module):
+    def __init__(self, d_model, vocab_size) -> None:
+        super().__init__()
+        self.proj = nn.Linear(d_model, vocab_size)
+    
+    def forward(self, x):
+        return self.proj(x)
+
+
+
+
+class Transformer(nn.Module):
+    def __init__(self, encoder: Encoder, decoder: Decoder, projection_layer: ProjectionLayer, 
+                 src_embed: InputEmbeddings, tgt_embed: InputEmbeddings, 
+                 src_pos: PositionalEncodding, tgt_pos: PositionalEncodding) -> None:
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.projection_layer = projection_layer
+        self.src_embed = src_embed
+        self.tgt_embed = tgt_embed
+        self.src_pos = src_pos
+        self.tgt_pos = tgt_pos
+
+    def encoder(self, src, src_mask):
+        src = self.src_embed(src)
+        src= self.src_pos(src)
+        return self.encoder(src, src_mask)
+    
+    def decoder(self, tgt, encoder_output, src_mask, tgt_mask):
+        tgt = self.tgt_embed(tgt)
+        tgt = self.tgt_pos(tgt)
+        return self.decoder(tgt, encoder_output, src_mask, tgt_mask)
+    
+    def project(self, x):
+        return self.projection_layer(x)
+    
+def built_transformer(d_model: int=512, src_vocab_size:int, tgt_vocab_size:int,):
+    InputEmbeddings()
+    
+
+
+
+        
+    
