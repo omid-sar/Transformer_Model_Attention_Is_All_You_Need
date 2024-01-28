@@ -179,14 +179,14 @@ def get_model(config, src_vocab_size, tgt_vocab_size):
     return model
 # ----------------------------------------------------------------------------------------------------   
 
-
+config = get_config()
 def train_model(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f" Using {device} device ")
 
     (Path(f"{config['datasource']}_{config['model_folder']}")).mkdir(parents=True, exist_ok=True)
     train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt = get_ds(config)
-    model = get_model(config,src_vocab_size, tgt_vocab_size)
+    model = get_model(config, tokenizer_src.get_vocab_size(), tokenizer_tgt.get_vocab_size()).to(device)
     # Tensorboard
     writer = SummaryWriter(config['experiment_name'])
     optimizer = torch.optim.Adam(model.parameters(), lr = config['lr'])
@@ -210,7 +210,7 @@ def train_model(config):
     for epoch in range(initial_epoch, config['num_epochs']):
         torch.cuda.empty_cache()
         model.train()
-        batch_iterator = tqdm(train_dataloader, desc=f"Processing Epoch{epoch:02d}")
+        batch_iterator = tqdm(train_dataloader, desc=f" Processing epoch {epoch:02d}")
         for batch in batch_iterator:
 
             encoder_input = batch['encoder_input'].to(device) # (B, seq_len)

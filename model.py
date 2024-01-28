@@ -284,7 +284,7 @@ def built_transformer(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int
         decoder_self_attention_block = MultiHeadAttentionBlock(d_model, h, dropout)
         decoder_cross_attention_block = MultiHeadAttentionBlock(d_model, h, dropout)
         feed_forward_block = FeedForwardBlock(d_model, d_ff, dropout)
-        decoder_block = DecoderBlock(decoder_self_attention_block,decoder_self_attention_block, feed_forward_block, dropout)
+        decoder_block = DecoderBlock(decoder_self_attention_block,decoder_cross_attention_block feed_forward_block, dropout)
         decoder_blocks.append(decoder_block)
 
     # Create the encoder and decoder
