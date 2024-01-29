@@ -93,4 +93,30 @@ def causal_mask(size):
     mask = torch.triu(torch.ones((1, size, size)), diagonal=1).type(torch.int)
     return mask == 0
 
+size = 4
+torch.triu(torch.ones((1, size, size)), diagonal=1).type(torch.int)
 
+import torch
+
+def causal_mask(size):
+    return torch.tril(torch.ones(size, size)).unsqueeze(0).int()
+
+# Example decoder input (batch size = 2, sequence length = 5)
+decoder_input = torch.tensor([[12, 5, 0, 0, 0],  # First sequence with padding
+                              [7, 8, 9, 10, 0]]) # Second sequence with padding
+pad_token = 0
+
+# Create the padding mask
+padding_mask = (decoder_input != pad_token).unsqueeze(1).int()
+
+# Create the causal mask
+seq_len = decoder_input.size(1)
+causal_mask = causal_mask(seq_len)
+
+# Combine the masks
+decoder_mask = padding_mask & causal_mask
+
+
+print("Padding Mask:\n", padding_mask)
+print("\nCausal Mask:\n", causal_mask)
+print("\nDecoder Mask:\n", decoder_mask)

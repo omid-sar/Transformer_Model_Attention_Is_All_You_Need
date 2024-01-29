@@ -179,7 +179,7 @@ def get_model(config, src_vocab_size, tgt_vocab_size):
     return model
 # ----------------------------------------------------------------------------------------------------   
 
-config = get_config()
+
 def train_model(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f" Using {device} device ")
@@ -241,12 +241,3 @@ def train_model(config):
             optimizer.zero_grad(set_to_none=True)
 
             global_step += 1
-            "encoder_input": encoder_input,  # (seq_len)
-            "decoder_input": decoder_input,  # (seq_len)
-            "encoder_mask": (encoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int(), # (1, 1, seq_len)
-            "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).int() & causal_mask(decoder_input.size(0)), # (1, seq_len) & (1, seq_len, seq_len),
-            "label": label,  # (seq_len)
-            "src_text": src_text,
-            "tgt_text": tgt_text,
-        }
-
