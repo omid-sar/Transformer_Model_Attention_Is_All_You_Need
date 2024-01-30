@@ -33,6 +33,31 @@ tokenizer_path = Path(config['tokenizer_file'].format(lang))"""
 
 
 # ----------------------------------------------------------------------------------------------------
+def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, device, print_msg, global_state, writer, num_examples=2):
+    model.eval()
+    count = 0
+
+    source_texts =[]
+    expected = []
+    predicted =[]
+
+    # Size control Window(Default Value)
+    console_width = 80
+    with torch.no_grad():
+        for batch in validation_ds:
+            count += 1
+            encoder_input = batch['encoder_input'].to(device)
+            encoder_mask = batch["encoder_mask"].to(device)
+
+            assert encoder_input.size(0) == 1, "Batch size must be 1 during validation"
+
+
+
+
+
+
+
+
 def get_all_sentences(ds, lang):
     for item in ds:
         yield item['translation'][lang]
@@ -214,11 +239,15 @@ def train_model(config):
 
         # Save the model at the end of every epoch
         model_filename = get_weights_file_path(config, f"{epoch:02d}")
+        model_folder = Path(config['model_folder'])
+        
+        if not Path.exists(model_folder):
+            os.mkdir(model_folder)
         torch.save({
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-            'global_step': global_step 
+            'global_step': global_step
         }, model_filename)
 
 
