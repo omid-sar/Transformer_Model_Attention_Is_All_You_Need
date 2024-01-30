@@ -12,7 +12,7 @@ def get_config():
         "lang_tgt": "fa",
         "model_folder": "weights",
         "model_basename": "tmodel_",
-        "preload": "latest",
+        "preload": None,
         "tokenizer_file": "tokenizer_file_{0}.json",
         "experiment_name": "runs/tmodel"
     }

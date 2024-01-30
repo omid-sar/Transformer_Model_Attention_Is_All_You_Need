@@ -31,12 +31,12 @@ class BilingualDataset(Dataset):
      
         # text to tokens
         enc_input_tokens = self.tokenizer_src.encode(src_text).ids
-        dec_input_tokens = self.tokenizer_src.encode(tgt_text).ids
+        dec_input_tokens = self.tokenizer_tgt.encode(tgt_text).ids
         
         # Calculate padding number
         enc_num_padding_tokens = self.seq_len - len(enc_input_tokens) - 2
         dec_num_padding_tokens = self.seq_len - len(dec_input_tokens) - 1
-
+        
         #  Raise Error if the number get negative
 
         if enc_num_padding_tokens < 0 or dec_num_padding_tokens < 0:
@@ -46,9 +46,9 @@ class BilingualDataset(Dataset):
         encoder_input = torch.concat(
             [
                 self.sos_token,
-                torch.Tensor(enc_input_tokens, dtype=torch.int64),
+                torch.tensor(enc_input_tokens, dtype=torch.int64),
                 self.eos_token,
-                torch.Tensor([self.pad_token] * enc_num_padding_tokens, dtype=torch.int64)
+                torch.tensor([self.pad_token] * enc_num_padding_tokens, dtype=torch.int64)
 
                   ]
         )
@@ -56,25 +56,25 @@ class BilingualDataset(Dataset):
         decoder_input = torch.concat(
             [
                 self.sos_token,
-                torch.Tensor(dec_input_tokens, dtype=torch.int64),
-                torch.Tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
+                torch.tensor(dec_input_tokens, dtype=torch.int64),
+                torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
 
                   ]
         )
 
         label = torch.concat(
             [
-                torch.Tensor(dec_input_tokens, dtype=torch.int64),
+                torch.tensor(dec_input_tokens, dtype=torch.int64),
                 self.eos_token,
-                torch.Tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
+                torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
 
                   ]
         )
 
         # Check the size of the tensors to make sure they are all seq_len 
-        assert encoder_input.size(0) == len(self.seq_len)
-        assert decoder_input.size(0) == len(self.seq_len)
-        assert label.size(0) == len(self.seq_len)
+        assert encoder_input.size(0) == self.seq_len
+        assert decoder_input.size(0) == self.seq_len
+        assert label.size(0) == self.seq_len
 
 
         return {
@@ -93,30 +93,3 @@ def causal_mask(size):
     mask = torch.triu(torch.ones((1, size, size)), diagonal=1).type(torch.int)
     return mask == 0
 
-size = 4
-torch.triu(torch.ones((1, size, size)), diagonal=1).type(torch.int)
-
-import torch
-
-def causal_mask(size):
-    return torch.tril(torch.ones(size, size)).unsqueeze(0).int()
-
-# Example decoder input (batch size = 2, sequence length = 5)
-decoder_input = torch.tensor([[12, 5, 0, 0, 0],  # First sequence with padding
-                              [7, 8, 9, 10, 0]]) # Second sequence with padding
-pad_token = 0
-
-# Create the padding mask
-padding_mask = (decoder_input != pad_token).unsqueeze(1).int()
-
-# Create the causal mask
-seq_len = decoder_input.size(1)
-causal_mask = causal_mask(seq_len)
-
-# Combine the masks
-decoder_mask = padding_mask & causal_mask
-
-
-print("Padding Mask:\n", padding_mask)
-print("\nCausal Mask:\n", causal_mask)
-print("\nDecoder Mask:\n", decoder_mask)

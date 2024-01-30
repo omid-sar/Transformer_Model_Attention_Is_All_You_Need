@@ -23,6 +23,7 @@ from tokenizers.pre_tokenizers import Whitespace
 from pathlib import Path
 import os
 import sys
+import warnings
 
 # ----------------------------------------------------------------------------------------------------
 # help me to realize the Path Module
@@ -38,7 +39,7 @@ def get_all_sentences(ds, lang):
 
 def get_or_build_tokenizer(config, ds, lang):
     tokenizer_path = Path(config['tokenizer_file'].format(lang))
-    if not tokenizer_path.exists():
+    if not Path.exists(tokenizer_path):
         # Huggigface code
         tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
         tokenizer.pre_tokenizer = Whitespace()
@@ -90,11 +91,11 @@ DatasetDict({
 """
 # ----------------------------------------------------------------------------------------------------
 
-
 def get_ds(config):
     # Dataset only has a train split, so we divide it
     ds_raw = load_dataset(f"{config['datasource']}", split='train', )
-
+        # It only has the train split, so we divide it overselves
+    
     # Build Tokenoizers
     tokenizer_src = get_or_build_tokenizer(config, ds_raw, config['lang_src'])
     tokenizer_tgt = get_or_build_tokenizer(config, ds_raw, config['lang_tgt'])
@@ -115,7 +116,7 @@ def get_ds(config):
 
     for item in ds_raw:
        src_ids = tokenizer_src.encode(item['translation'][config['lang_src']]).ids
-       tgt_ids = tokenizer_src.encode(item['translation'][config['lang_tgt']]).ids
+       tgt_ids = tokenizer_tgt.encode(item['translation'][config['lang_tgt']]).ids
        max_len_src = max(len(src_ids), max_len_src)
        max_len_tgt = max(len(tgt_ids), max_len_tgt)
 
@@ -128,50 +129,7 @@ def get_ds(config):
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
 # ----------------------------------------------------------------------------------------------------   
-""""
-ds_raw = load_dataset(f"{config['datasource']}", split='train', )
-# Build Tokenoizers
-tokenizer_src = get_or_build_tokenizer(config, ds_raw, config['lang_src'])
-tokenizer_tgt = get_or_build_tokenizer(config, ds_raw, config['lang_tgt'])
-# 90% training, 10% validation
-train_ds_size = int(0.9 * len(ds_raw))
-val_ds_size = len(ds_raw) - train_ds_size
-train_ds_raw, val_ds_raw = random_split(ds_raw, [train_ds_size, val_ds_size])
 
-
-tep_dataset_sample = train_ds_raw[9]
-src_sample = tep_dataset_sample['translation']['en']
-tgt_sample = tep_dataset_sample['translation']['fa']
-
-src_token_id = tokenizer_src.encode(src_sample).ids
-tgt_token_id = tokenizer_tgt.encode(tgt_sample).ids
-
-
-enc_input_tokens =tokenizer_src.encode(src_sample).ids
-dec_input_tokens =tokenizer_tgt.encode(tgt_sample).ids
-seq_len = 50
-enc_num_padding_tokens = seq_len - len(enc_input_tokens) - 2
-
-print(f"src_sample:  {src_sample} \n src_token_id: {src_token_id} \n enc_input_tokens: {enc_input_tokens} \n seq_len: {seq_len} \n enc_num_padding_tokens: {enc_num_padding_tokens}")
-print(f"tgt_sample:  {tgt_sample} \n tgt_token_id: {tgt_token_id}")
-
-
-sos_token = torch.tensor([tokenizer_src.token_to_id("[SOS]")], dtype=torch.int64)
-eos_token = torch.tensor([tokenizer_src.token_to_id("[EOS]")], dtype=torch.int64)
-pad_token = torch.tensor([tokenizer_src.token_to_id("[PAD]")], dtype=torch.int64)
-
-
-encoder_input = torch.concat([sos_token, torch.Tensor(enc_input_tokens), eos_token, torch.Tensor([pad_token] * enc_num_padding_tokens)])
-encoder_mask = (encoder_input != pad_token).unsqueeze(0).unsqueeze(0).int()
-
-def causal_mask(size):
-    mask = torch.triu(torch.ones(1, size, size), diagonal=1).type(torch.int)
-    return mask == 0
-
-decoder_mask = causal_mask(seq_len)
-
-print(f" encoder_input: {encoder_input} \n encoder_mask: {encoder_mask} \n encoder_mask.shape: {encoder_mask.shape} \n decoder_mask: {decoder_mask}")
-"""
 # ----------------------------------------------------------------------------------------------------   
 
 def get_model(config, src_vocab_size, tgt_vocab_size):
@@ -181,8 +139,18 @@ def get_model(config, src_vocab_size, tgt_vocab_size):
 
 
 def train_model(config):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f" Using {device} device ")
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
+    print("Using device:", device)
+    if (device == 'cuda'):
+        print(f"Device name: {torch.cuda.get_device_name(device.index)}")
+        print(f"Device memory: {torch.cuda.get_device_properties(device.index).total_memory / 1024 ** 3} GB")
+    elif (device == 'mps'):
+        print(f"Device name: <mps>")
+    else:
+        print("NOTE: If you have a GPU, consider using it for training.")
+        print("      On a Windows machine with NVidia GPU, check this video: https://www.youtube.com/watch?v=GMSjDTU8Zlc")
+        print("      On a Mac machine, run: pip3 install --pre torch torchvision torchaudio torchtext --index-url https://download.pytorch.org/whl/nightly/cpu")
+    device = torch.device(device)
 
     (Path(f"{config['datasource']}_{config['model_folder']}")).mkdir(parents=True, exist_ok=True)
     train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt = get_ds(config)
@@ -218,14 +186,15 @@ def train_model(config):
             encoder_mask = batch['encoder_mask'].to(device) # (B, 1, 1, seq_len)
             decoder_mask = batch['decoder_mask'].to(device) # (B, 1, seq_len, seq_len)
         
-            encoder_output = model.encode(encoder_input, encoder_mask)
-            decoder_output = model.decode(encoder_output, decoder_output, decoder_mask, encoder_mask)
-            proj_output = model.project(decoder_output)
+            encoder_output = model.encode(encoder_input, encoder_mask) #(B, seq_len, d_model)
+            decoder_output = model.decode(encoder_output, decoder_input, decoder_mask, encoder_mask) #(B, seq_len, d_model)
+            proj_output = model.project(decoder_output) #(B, seq_len, tgt_vocab_size)
 
             # Compare the output with the label
             label = batch['label'].to(device) # (B, seq_len)
 
             # Compute the loss using a simple cross entropy
+            #proj_output: (B, seq_len, tgt_vocab_size) -> (B *seq_len, tgt_vocab_size)
             loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
             batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
 
@@ -241,3 +210,18 @@ def train_model(config):
             optimizer.zero_grad(set_to_none=True)
 
             global_step += 1
+
+        # Save the model at the end of every epoch
+        model_filename = get_weights_file_path(config, f"{epoch:02d}")
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'global_step': global_step 
+        }, model_filename)
+
+
+if __name__ == '__main__':
+   # warnings.filterwarnings("ignore")
+    config = get_config()
+    train_model(config)
