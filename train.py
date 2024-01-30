@@ -93,7 +93,8 @@ DatasetDict({
 
 def get_ds(config):
     # Dataset only has a train split, so we divide it
-    ds_raw = load_dataset(f"{config['datasource']}", split='train', )
+    ds_raw = load_dataset(f"{config['datasource']}", f"{config['lang_src']}-{config['lang_tgt']}", split='train[:5%]')
+
         # It only has the train split, so we divide it overselves
     
     # Build Tokenoizers
