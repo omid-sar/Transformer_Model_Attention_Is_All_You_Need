@@ -33,23 +33,7 @@ tokenizer_path = Path(config['tokenizer_file'].format(lang))"""
 
 
 # ----------------------------------------------------------------------------------------------------
-def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, device, print_msg, global_state, writer, num_examples=2):
-    model.eval()
-    count = 0
 
-    source_texts =[]
-    expected = []
-    predicted =[]
-
-    # Size control Window(Default Value)
-    console_width = 80
-    with torch.no_grad():
-        for batch in validation_ds:
-            count += 1
-            encoder_input = batch['encoder_input'].to(device)
-            encoder_mask = batch["encoder_mask"].to(device)
-
-            assert encoder_input.size(0) == 1, "Batch size must be 1 during validation"
 
 
 
