@@ -25,14 +25,9 @@ import os
 import sys
 import warnings
 
-# ----------------------------------------------------------------------------------------------------
-# help me to realize the Path Module
-"""config = {'tokenizer_file': '../data/raw/tokenizer_file_{}.json'}
-lang = 'en'
-tokenizer_path = Path(config['tokenizer_file'].format(lang))"""
-
 
 # ----------------------------------------------------------------------------------------------------
+
 def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_len, device):
     sos_idx = tokenizer_tgt.token_to_id('[SOS]')
     eos_idx = tokenizer_tgt.token_to_id('[EOS]')
@@ -46,11 +41,11 @@ def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_
             break
 
         # build mask for target
-        # build mask for target
         decoder_mask = causal_mask(decoder_input.size(1)).type_as(source_mask).to(device)
 
         # calculate output
-        out = model.decode(encoder_output, source_mask, decoder_input, decoder_mask)
+        out = model.decode(encoder_output, decoder_input, decoder_mask, source_mask)
+        
 
         # get next token
         prob = model.project(out[:, -1])
@@ -64,7 +59,7 @@ def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_
 
     return decoder_input.squeeze(0)
 
-
+# ----------------------------------------------------------------------------------------------------
 
 def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, device, print_msg, global_step, writer, num_examples=2):
     model.eval()
@@ -74,14 +69,7 @@ def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, 
     expected = []
     predicted = []
 
-    try:
-        # get the console window width
-        with os.popen('stty size', 'r') as console:
-            _, console_width = console.read().split()
-            console_width = int(console_width)
-    except:
-        # If we can't get the console width, use 80 as default
-        console_width = 80
+    console_width = 80
 
     with torch.no_grad():
         for batch in validation_ds:
@@ -112,20 +100,14 @@ def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, 
             if count == num_examples:
                 print_msg('-'*console_width)
                 break
-    
 
-
-
-
-
-
-
-
+# ----------------------------------------------------------------------------------------------------
 
 def get_all_sentences(ds, lang):
     for item in ds:
         yield item['translation'][lang]
 
+# ----------------------------------------------------------------------------------------------------
 def get_or_build_tokenizer(config, ds, lang):
     tokenizer_path = Path(config['tokenizer_file'].format(lang))
     if not Path.exists(tokenizer_path):
@@ -158,23 +140,6 @@ DatasetDict({
                     {'en': 'i mean , the tartans for shit .',
                     'fa': 'منظورم اينه که تارتان بدرد نميخوره .'}
     }
-
-#SAMPLE FROM OPUS DATASET
-DatasetDict({
-    train: Dataset({
-        features: ['id', 'translation'],
-        num_rows: 32332
-    })
-})
-
-
-
-{
-    'id': '4',
- 'translation':
-                 {'en': 'There was no possibility of taking a walk that day.',
-                'it': 'I. In quel giorno era impossibile passeggiare.'}
-  }
 
 
 """
@@ -220,13 +185,11 @@ def get_ds(config):
 
 # ----------------------------------------------------------------------------------------------------   
 
-# ----------------------------------------------------------------------------------------------------   
-
 def get_model(config, src_vocab_size, tgt_vocab_size):
     model = built_transformer(src_vocab_size, tgt_vocab_size, src_seq_len=config['seq_len'], tgt_seq_len=config['seq_len'], d_model=config['d_model'])
     return model
-# ----------------------------------------------------------------------------------------------------   
 
+# ----------------------------------------------------------------------------------------------------   
 
 def train_model(config):
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.has_mps or torch.backends.mps.is_available() else "cpu"
@@ -270,6 +233,7 @@ def train_model(config):
         model.train()
         batch_iterator = tqdm(train_dataloader, desc=f" Processing epoch {epoch:02d}")
         for batch in batch_iterator:
+            model.train()
 
             encoder_input = batch['encoder_input'].to(device) # (B, seq_len)
             decoder_input = batch['decoder_input'].to(device) # (B, seq_len)
@@ -299,6 +263,8 @@ def train_model(config):
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
 
+            run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['seq_len'], device, lambda msg: batch_iterator.write(msg), global_step, writer )
+
             global_step += 1
 
         # Save the model at the end of every epoch
@@ -313,7 +279,8 @@ def train_model(config):
             'optimizer_state_dict': optimizer.state_dict(),
             'global_step': global_step
         }, model_filename)
-
+        
+# ----------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
    # warnings.filterwarnings("ignore")
